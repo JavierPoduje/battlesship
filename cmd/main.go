@@ -25,11 +25,16 @@ const (
 )
 
 func main() {
+	redisConn := battlesshiplib.NewRedis()
+
+	_ = redisConn.Set("a", "0", 0)
+	_ = redisConn.Set("b", "0", 0)
+
 	s, err := wish.NewServer(
 		wish.WithAddress(net.JoinHostPort(host, port)),
 		wish.WithHostKeyPath(".ssh/id_ed25519"),
 		wish.WithMiddleware(
-			bubbletea.Middleware(model.TeaHandler),
+			bubbletea.Middleware(model.TeaHandler(redisConn)),
 			activeterm.Middleware(), // Bubble Tea apps usually require a PTY.
 			logging.Middleware(),
 		),
@@ -37,8 +42,6 @@ func main() {
 	if err != nil {
 		log.Error("Could not start server", "error", err)
 	}
-
-	battlesshiplib.Bar()
 
 	done := make(chan os.Signal, 1)
 	signal.Notify(done, os.Interrupt, syscall.SIGINT, syscall.SIGTERM)
